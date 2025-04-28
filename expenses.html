@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenses Details</title>
+    <link rel="stylesheet" href="expenses.css">
+</head>
+<body>
+    <div class="container">
+        <div class="navigation">
+            <a href="index.html" class="nav-link">Financial Tracker</a>
+            <a href="expenses.html" class="nav-link active">Expenses Details</a>
+        </div>
+
+        <h1>Expenses Details</h1>
+        
+        <div class="summary-container">
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <h3>Total Delayed Expenses</h3>
+                    <p id="totalDelayedExpenses">₹0.00</p>
+                </div>
+                <div class="summary-item">
+                    <h3>Total Room Expenses</h3>
+                    <p id="totalRoomExpenses">₹0.00</p>
+                </div>
+                <div class="summary-item">
+                    <h3>Total Amount to Pay</h3>
+                    <p id="totalAmountToPay">₹0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="expenses-container">
+            <div class="expenses-section">
+                <h2>Delayed Expenses</h2>
+                <table id="delayedExpensesTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="delayedExpensesBody">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="expenses-section">
+                <h2>Room Expenses</h2>
+                <table id="roomExpensesTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roomExpensesBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="form-container">
+            <h2>Add New Expense</h2>
+            <form id="expenseForm">
+                <div class="form-group">
+                    <label for="date">Date:</label>
+                    <input type="date" id="date" required>
+                </div>
+                <div class="form-group">
+                    <label for="expenseType">Expense Type:</label>
+                    <select id="expenseType" required>
+                        <option value="delayed">Delayed Expense</option>
+                        <option value="room">Room Expense</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amount">Amount:</label>
+                    <input type="number" id="amount" required>
+                </div>
+                <!-- <div class="form-group">
+                    <label for="totalAmount">Total Amount:</label>
+                    <input type="number" id="totalAmount" readonly>
+                </div> -->
+                <button type="submit">Add Expense</button>
+            </form>
+        </div>
+    </div>
+    <script src="expenses.js"></script>
+</body>
+</html> 

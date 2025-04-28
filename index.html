@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Financial Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="loginContainer" class="container">
+        <h1>Login to Financial Tracker</h1>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <div class="password-input-container">
+                    <input type="password" id="password" required>
+                    <button type="button" class="toggle-password" onclick="togglePassword()">
+                        <span class="eye-icon">👁️</span>
+                    </button>
+                </div>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+
+    <div id="mainContent" class="container" style="display: none;">
+        <div class="container">
+            
+            <h1>Monthly Financial Tracker</h1>
+            
+            <form id="financialForm">
+                <div class="form-group">
+                    <h2>Income & Expenses</h2>
+                    <div class="input-group">
+                        <label for="date">Date:</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="monthlyIncome">Monthly Income (₹):</label>
+                        <input type="number" id="monthlyIncome" min="0" step="0.01" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="rent">Rent (₹):</label>
+                        <input type="number" id="rent" min="0" step="0.01" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="otherExpenses">Other Expenses (₹):</label>
+                        <input type="number" id="otherExpenses" min="0" step="0.01" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="roomExpenses">Room Expenses (₹):</label>
+                        <input type="number" id="roomExpenses" min="0" step="0.01" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="netSaving">Net Saving (₹):</label>
+                        <input type="number" id="netSaving" min="0" step="0.01" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="sip">SIP Amount (₹):</label>
+                        <input type="number" id="sip" min="0" step="0.01" required>
+                    </div>
+                </div>
+
+                <button type="submit">Add Entry</button>
+            </form>
+
+            <div class="summary-container">
+                <h2>Financial Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <h3>Total Income</h3>
+                        <p id="totalIncome">₹0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total Expenses</h3>
+                        <p id="totalExpenses">₹0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total Savings</h3>
+                        <p id="totalSavings">₹0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total SIP</h3>
+                        <p id="totalSIP">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <h2>Financial Records</h2>
+                <div class="table-wrapper">
+                    <table id="financialTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Monthly Income</th>
+                                <th>Rent</th>
+                                <th>Other Expenses</th>
+                                <th>Room Expenses</th>
+                                <th>Net Saving</th>
+                                <th>SIP</th>
+                                <th>Total Amount</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <button class="download-btn" onclick="downloadFinancialPDF()">Download Financial Report</button>
+            </div>
+        </div>
+        
+        <div class="container">
+            <h1>Expenses Details</h1>
+            
+            <div class="summary-container">
+                <h2>Expense Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <h3>Total Delayed Expenses</h3>
+                        <p id="totalDelayedExpenses">₹0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total Room Expenses</h3>
+                        <p id="totalRoomExpenses">₹0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total Amount to Pay</h3>
+                        <p id="totalAmountToPay">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="expenses-container">
+                <div class="expenses-section">
+                    <h2>Delayed Expenses</h2>
+                    <div class="table-container">
+                        <table border="1" id="delayedExpensesTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="delayedExpensesBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="expenses-section">
+                    <h2>Room Expenses</h2>
+                    <div class="table-container">
+                        <table border="1"  id="roomExpensesTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Total</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="roomExpensesBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <h2>Add New Expense</h2>
+                <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseDate">Date:</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseType">Expense Type:</label>
+                        <select id="expenseType" required>
+                            <option value="delayed">Delayed Expense</option>
+                            <option value="room">Room Expense</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount">Amount (₹):</label>
+                        <input type="number" id="amount" min="0" step="0.01" required>
+                    </div>
+                    <button type="submit">Add Expense</button>
+                </form>
+            </div>
+            <button class="download-btn" onclick="downloadExpensesPDF()">Download Expenses Report</button>
+        </div>
+        <div class="container">
+            <h1>Money Lending & Borrowing Tracker</h1>
+            
+            <div class="summary-container">
+                <h2>Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <h3>Total Amount to Receive</h3>
+                        <p id="totalToReceive">₹0.00</p>
+                    </div>
+                    <div class="summary-item">
+                        <h3>Total Amount to Pay</h3>
+                        <p id="totalToPay">₹0.00</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="money-tracking-container">
+                <div class="money-section">
+                    <h2>Money Given</h2>
+                    <div class="table-container">
+                        <table border="1" id="moneyGivenTable">
+                            <thead>
+                                <tr>
+                                    <th>Date Given</th>
+                                    <th>Person Name</th>
+                                    <th>Amount</th>
+                                    <th>Recovery Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="moneyGivenBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="money-section">
+                    <h2>Money Taken</h2>
+                    <div class="table-container">
+                        <table border="1" id="moneyTakenTable">
+                            <thead>
+                                <tr>
+                                    <th>Date Taken</th>
+                                    <th>Person Name</th>
+                                    <th>Amount</th>
+                                    <th>Return Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="moneyTakenBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <h2>Add New Money Transaction</h2>
+                <form id="moneyTransactionForm">
+                    <div class="form-group">
+                        <label for="transactionType">Transaction Type:</label>
+                        <select id="transactionType" required>
+                            <option value="given">Money Given</option>
+                            <option value="taken">Money Taken</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="personName">Person Name:</label>
+                        <input type="text" id="personName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transactionDate">Transaction Date:</label>
+                        <input type="date" id="transactionDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="transactionAmount">Amount (₹):</label>
+                        <input type="number" id="transactionAmount" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recoveryDate">Expected Recovery/Return Date:</label>
+                        <input type="date" id="recoveryDate" required>
+                    </div>
+                    <button type="submit">Add Transaction</button>
+                </form>
+            </div>
+            <button class="download-btn" onclick="downloadMoneyTransactionsPDF()">Download Money Transactions Report</button>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="script.js"></script>
+    <script src="expenses.js"></script>
+    <script src="pdf.js"></script>
+    <script src="moneyTransactions.js"></script>
+    <script src="auth.js"></script>
+</body>
+</html> 
