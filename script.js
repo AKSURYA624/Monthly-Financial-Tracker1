@@ -1,493 +1,175 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('financialForm');
-    const tableBody = document.getElementById('tableBody');
-    
-    // Load existing data from localStorage
-    let financialData = JSON.parse(localStorage.getItem('financialData')) || [];
-    
-    // Display existing data
-    displayData();
-    
-    // Set default date to today
-    document.getElementById('date').valueAsDate = new Date();
-    
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Get form values
-        const formData = {
-            date: document.getElementById('date').value,
-            monthlyIncome: parseFloat(document.getElementById('monthlyIncome').value) || 0,
-            rent: parseFloat(document.getElementById('rent').value) || 0,
-            otherExpenses: parseFloat(document.getElementById('otherExpenses').value) || 0,
-            roomExpenses: parseFloat(document.getElementById('roomExpenses').value) || 0,
-            netSaving: parseFloat(document.getElementById('netSaving').value) || 0,
-            sip: parseFloat(document.getElementById('sip').value) || 0
-        };
-        
-        // Calculate total expenses and savings
-        const totalExpenses = formData.rent + formData.otherExpenses + formData.roomExpenses;
-        const totalSavings = formData.netSaving + formData.sip;
-        
-        // Calculate total amount (Income - Expenses - Savings)
-        formData.totalAmount = formData.monthlyIncome - totalExpenses - totalSavings;
-        
-        // Validate data
-        if (formData.totalAmount < 0) {
-            alert('Total expenses and savings exceed monthly income!');
-            return;
-        }
-        
-        // Add to array
-        financialData.push(formData);
-        
-        // Sort data by date (newest first)
-        financialData.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        // Save to localStorage
-        localStorage.setItem('financialData', JSON.stringify(financialData));
-        
-        // Display updated data
-        displayData();
-        
-        // Reset form
-        form.reset();
-        document.getElementById('date').valueAsDate = new Date();
-    });
-    
-    function displayData() {
-        tableBody.innerHTML = '';
-        
-        // Calculate totals
-        const totals = {
-            monthlyIncome: 0,
-            rent: 0,
-            otherExpenses: 0,
-            roomExpenses: 0,
-            netSaving: 0,
-            sip: 0,
-            totalAmount: 0
-        };
-        
-        financialData.forEach((data, index) => {
-            const row = document.createElement('tr');
-            
-            // Format date
-            const date = new Date(data.date);
-            const formattedDate = date.toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            
-            row.innerHTML = `
-                <td>${formattedDate}</td>
-                <td>₹${data.monthlyIncome.toFixed(2)}</td>
-                <td>₹${data.rent.toFixed(2)}</td>
-                <td>₹${data.otherExpenses.toFixed(2)}</td>
-                <td>₹${data.roomExpenses.toFixed(2)}</td>
-                <td>₹${data.netSaving.toFixed(2)}</td>
-                <td>₹${data.sip.toFixed(2)}</td>
-                <td>₹${data.totalAmount.toFixed(2)}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="edit-btn" onclick="editEntry(${index})">Edit</button>
-                        <button class="delete-btn" onclick="deleteEntry(${index})">Delete</button>
-                    </div>
-                </td>
-            `;
-            
-            tableBody.appendChild(row);
-            
-            // Add to totals
-            totals.monthlyIncome += data.monthlyIncome;
-            totals.rent += data.rent;
-            totals.otherExpenses += data.otherExpenses;
-            totals.roomExpenses += data.roomExpenses;
-            totals.netSaving += data.netSaving;
-            totals.sip += data.sip;
-            totals.totalAmount += data.totalAmount;
-        });
-        
-        // Add total row
-        const totalRow = document.createElement('tr');
-        totalRow.className = 'total-row';
-        totalRow.innerHTML = `
-            <td><strong>Total</strong></td>
-            <td><strong>₹${totals.monthlyIncome.toFixed(2)}</strong></td>
-            <td><strong>₹${totals.rent.toFixed(2)}</strong></td>
-            <td><strong>₹${totals.otherExpenses.toFixed(2)}</strong></td>
-            <td><strong>₹${totals.roomExpenses.toFixed(2)}</strong></td>
-            <td><strong>₹${totals.netSaving.toFixed(2)}</strong></td>
-            <td><strong>₹${totals.sip.toFixed(2)}</strong></td>
-            <td><strong>₹${totals.totalAmount.toFixed(2)}</strong></td>
-            <td></td>
-        `;
-        
-        tableBody.appendChild(totalRow);
-        
-        // Update summary totals
-        const totalExpenses = totals.rent + totals.otherExpenses + totals.roomExpenses;
-        const totalSavings = totals.netSaving + totals.sip;
-        
-        document.getElementById('totalIncome').textContent = `₹${totals.monthlyIncome.toFixed(2)}`;
-        document.getElementById('totalExpenses').textContent = `₹${totalExpenses.toFixed(2)}`;
-        document.getElementById('totalSavings').textContent = `₹${totalSavings.toFixed(2)}`;
-        document.getElementById('totalSIP').textContent = `₹${totals.sip.toFixed(2)}`;
-    }
-    
-    // Make functions available globally
-    window.editEntry = function(index) {
-        const data = financialData[index];
-        document.getElementById('date').value = data.date;
-        document.getElementById('monthlyIncome').value = data.monthlyIncome;
-        document.getElementById('rent').value = data.rent;
-        document.getElementById('otherExpenses').value = data.otherExpenses;
-        document.getElementById('roomExpenses').value = data.roomExpenses;
-        document.getElementById('netSaving').value = data.netSaving;
-        document.getElementById('sip').value = data.sip;
-        
-        // Remove the old entry
-        financialData.splice(index, 1);
-        localStorage.setItem('financialData', JSON.stringify(financialData));
-        displayData();
-    };
-    
-    window.deleteEntry = function(index) {
-        if (confirm('Are you sure you want to delete this entry?')) {
-            financialData.splice(index, 1);
-            localStorage.setItem('financialData', JSON.stringify(financialData));
-            displayData();
-        }
-    };
-}); 
-document.addEventListener('DOMContentLoaded', () => {
-    const expenseForm = document.getElementById('expenseForm');
-    const delayedExpensesBody = document.getElementById('delayedExpensesBody');
-    const roomExpensesBody = document.getElementById('roomExpensesBody');
-    
-    // Load existing data from localStorage
-    let expensesData = JSON.parse(localStorage.getItem('expensesData')) || {
-        delayed: [],
-        room: []
-    };
-    
-    // Display existing data
-    displayExpenses();
-    
-    // Set default date to today
-    document.getElementById('expenseDate').valueAsDate = new Date();
-    
-    expenseForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        // Get form values
-        const formData = {
-            date: document.getElementById('expenseDate').value,
-            type: document.getElementById('expenseType').value,
-            amount: parseFloat(document.getElementById('amount').value) || 0
-        };
-        
-        // Calculate total (for now, just using amount as total)
-        formData.total = formData.amount;
-        
-        // Add to appropriate array
-        if (formData.type === 'delayed') {
-            expensesData.delayed.push(formData);
-        } else {
-            expensesData.room.push(formData);
-        }
-        
-        // Sort data by date (newest first)
-        expensesData.delayed.sort((a, b) => new Date(b.date) - new Date(a.date));
-        expensesData.room.sort((a, b) => new Date(b.date) - new Date(a.date));
-        
-        // Save to localStorage
-        localStorage.setItem('expensesData', JSON.stringify(expensesData));
-        
-        // Display updated data
-        displayExpenses();
-        
-        // Reset form
-        expenseForm.reset();
-        document.getElementById('expenseDate').valueAsDate = new Date();
-    });
-    
-    function displayExpenses() {
-        delayedExpensesBody.innerHTML = '';
-        roomExpensesBody.innerHTML = '';
-        
-        // Calculate totals
-        const totals = {
-            delayed: 0,
-            room: 0
-        };
-        
-        // Display delayed expenses
-        expensesData.delayed.forEach((expense, index) => {
-            const row = document.createElement('tr');
-            
-            // Format date
-            const date = new Date(expense.date);
-            const formattedDate = date.toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            
-            row.innerHTML = `
-                <td>${formattedDate}</td>
-                <td>₹${expense.amount.toFixed(2)}</td>
-                <td>₹${expense.total.toFixed(2)}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="edit-btn" onclick="editExpense('delayed', ${index})">Edit</button>
-                        <button class="delete-btn" onclick="deleteExpense('delayed', ${index})">Delete</button>
-                    </div>
-                </td>
-            `;
-            
-            delayedExpensesBody.appendChild(row);
-            totals.delayed += expense.amount;
-        });
-        
-        // Display room expenses
-        expensesData.room.forEach((expense, index) => {
-            const row = document.createElement('tr');
-            
-            // Format date
-            const date = new Date(expense.date);
-            const formattedDate = date.toLocaleDateString('en-IN', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-            
-            row.innerHTML = `
-                <td>${formattedDate}</td>
-                <td>₹${expense.amount.toFixed(2)}</td>
-                <td>₹${expense.total.toFixed(2)}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="edit-btn" onclick="editExpense('room', ${index})">Edit</button>
-                        <button class="delete-btn" onclick="deleteExpense('room', ${index})">Delete</button>
-                    </div>
-                </td>
-            `;
-            
-            roomExpensesBody.appendChild(row);
-            totals.room += expense.amount;
-        });
-        
-        // Update summary totals
-        const totalAmountToPay = totals.delayed + totals.room;
-        
-        document.getElementById('totalDelayedExpenses').textContent = `₹${totals.delayed.toFixed(2)}`;
-        document.getElementById('totalRoomExpenses').textContent = `₹${totals.room.toFixed(2)}`;
-        document.getElementById('totalAmountToPay').textContent = `₹${totalAmountToPay.toFixed(2)}`;
-    }
-    
-    // Make functions available globally
-    window.editExpense = function(type, index) {
-        const expense = expensesData[type][index];
-        document.getElementById('expenseDate').value = expense.date;
-        document.getElementById('expenseType').value = type;
-        document.getElementById('amount').value = expense.amount;
-        
-        // Remove the old entry
-        expensesData[type].splice(index, 1);
-        localStorage.setItem('expensesData', JSON.stringify(expensesData));
-        displayExpenses();
-    };
-    
-    window.deleteExpense = function(type, index) {
-        if (confirm('Are you sure you want to delete this expense?')) {
-            expensesData[type].splice(index, 1);
-            localStorage.setItem('expensesData', JSON.stringify(expensesData));
-            displayExpenses();
-        }
-    };
-}); 
-// Initialize jsPDF
-const { jsPDF } = window.jspdf;
-
-function downloadFinancialPDF() {
-    const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(20);
-    doc.text('Monthly Financial Tracker Report', 14, 20);
-    
-    // Add date
-    doc.setFontSize(12);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    // Add summary section
-    doc.setFontSize(16);
-    doc.text('Financial Summary', 14, 45);
-    
-    // Add summary details
-    doc.setFontSize(12);
-    doc.text(`Total Income: ₹${document.getElementById('totalIncome').textContent}`, 14, 55);
-    doc.text(`Total Expenses: ₹${document.getElementById('totalExpenses').textContent}`, 14, 65);
-    doc.text(`Total Savings: ₹${document.getElementById('totalSavings').textContent}`, 14, 75);
-    doc.text(`Total SIP: ₹${document.getElementById('totalSIP').textContent}`, 14, 85);
-    
-    // Add financial records table
-    doc.setFontSize(16);
-    doc.text('Financial Records', 14, 100);
-    
-    // Get table data
-    const table = document.getElementById('financialTable');
-    const rows = Array.from(table.querySelectorAll('tr'));
-    
-    // Prepare data for the table
-    const tableData = rows.map(row => {
-        const cells = Array.from(row.querySelectorAll('th, td'));
-        return cells.map(cell => cell.textContent.replace('₹', ''));
-    });
-    
-    // Add table to PDF
-    doc.autoTable({
-        head: [tableData[0]],
-        body: tableData.slice(1),
-        startY: 110,
-        theme: 'grid',
-        styles: {
-            fontSize: 10,
-            cellPadding: 5
-        },
-        headStyles: {
-            fillColor: [76, 175, 80],
-            textColor: 255
-        }
-    });
-    
-    // Save the PDF
-    doc.save('financial-report.pdf');
-}
-
-function downloadExpensesPDF() {
-    const doc = new jsPDF();
-    
-    // Add title
-    doc.setFontSize(20);
-    doc.text('Expenses Details Report', 14, 20);
-    
-    // Add date
-    doc.setFontSize(12);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    // Add summary section
-    doc.setFontSize(16);
-    doc.text('Expense Summary', 14, 45);
-    
-    // Add summary details
-    doc.setFontSize(12);
-    doc.text(`Total Delayed Expenses: ₹${document.getElementById('totalDelayedExpenses').textContent}`, 14, 55);
-    doc.text(`Total Room Expenses: ₹${document.getElementById('totalRoomExpenses').textContent}`, 14, 65);
-    doc.text(`Total Amount to Pay: ₹${document.getElementById('totalAmountToPay').textContent}`, 14, 75);
-    
-    // Add delayed expenses table
-    doc.setFontSize(16);
-    doc.text('Delayed Expenses', 14, 90);
-    
-    // Get delayed expenses table data
-    const delayedTable = document.getElementById('delayedExpensesTable');
-    const delayedRows = Array.from(delayedTable.querySelectorAll('tr'));
-    
-    // Prepare data for the table
-    const delayedTableData = delayedRows.map(row => {
-        const cells = Array.from(row.querySelectorAll('th, td'));
-        return cells.map(cell => cell.textContent.replace('₹', ''));
-    });
-    
-    // Add delayed expenses table to PDF
-    doc.autoTable({
-        head: [delayedTableData[0]],
-        body: delayedTableData.slice(1),
-        startY: 100,
-        theme: 'grid',
-        styles: {
-            fontSize: 10,
-            cellPadding: 5
-        },
-        headStyles: {
-            fillColor: [76, 175, 80],
-            textColor: 255
-        }
-    });
-    
-    // Add room expenses table
-    doc.setFontSize(16);
-    doc.text('Room Expenses', 14, doc.lastAutoTable.finalY + 20);
-    
-    // Get room expenses table data
-    const roomTable = document.getElementById('roomExpensesTable');
-    const roomRows = Array.from(roomTable.querySelectorAll('tr'));
-    
-    // Prepare data for the table
-    const roomTableData = roomRows.map(row => {
-        const cells = Array.from(row.querySelectorAll('th, td'));
-        return cells.map(cell => cell.textContent.replace('₹', ''));
-    });
-    
-    // Add room expenses table to PDF
-    doc.autoTable({
-        head: [roomTableData[0]],
-        body: roomTableData.slice(1),
-        startY: doc.lastAutoTable.finalY + 30,
-        theme: 'grid',
-        styles: {
-            fontSize: 10,
-            cellPadding: 5
-        },
-        headStyles: {
-            fillColor: [76, 175, 80],
-            textColor: 255
-        }
-    });
-    
-    // Save the PDF
-    doc.save('expenses-report.pdf');
-} 
-// Initialize arrays to store money transactions
+// Global variables
+let records = [];
+let savingsGoal = 0;
+let delayedExpenses = [];
+let roomExpenses = [];
 let moneyGiven = [];
 let moneyTaken = [];
 
-// Load data from localStorage on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadMoneyTransactions();
-    updateMoneySummary();
+// Event Listeners
+document.getElementById('financialForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const record = {
+        date: document.getElementById('date').value,
+        monthlyIncome: parseFloat(document.getElementById('monthlyIncome').value),
+        rent: parseFloat(document.getElementById('rent').value),
+        otherExpenses: parseFloat(document.getElementById('otherExpenses').value),
+        roomExpenses: parseFloat(document.getElementById('roomExpenses').value),
+        sipAmount: parseFloat(document.getElementById('sipAmount').value)
+    };
+
+    records.push(record);
+    updateTable();
+    updateSummary();
+    this.reset();
 });
 
-// Function to load money transactions from localStorage
-function loadMoneyTransactions() {
-    const savedMoneyGiven = localStorage.getItem('moneyGiven');
-    const savedMoneyTaken = localStorage.getItem('moneyTaken');
+document.getElementById('expenseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
     
-    if (savedMoneyGiven) {
-        moneyGiven = JSON.parse(savedMoneyGiven);
-        displayMoneyGiven();
+    const expense = {
+        date: document.getElementById('expenseDate').value,
+        amount: parseFloat(document.getElementById('expenseAmount').value),
+        type: document.getElementById('expenseType').value
+    };
+
+    if (expense.type === 'delayed') {
+        delayedExpenses.push(expense);
+    } else {
+        roomExpenses.push(expense);
     }
+
+    updateExpenseTables();
+    updateExpenseSummary();
+    this.reset();
+});
+
+document.getElementById('transactionForm').addEventListener('submit', function(e) {
+    e.preventDefault();
     
-    if (savedMoneyTaken) {
-        moneyTaken = JSON.parse(savedMoneyTaken);
-        displayMoneyTaken();
+    const transaction = {
+        type: document.getElementById('transactionType').value,
+        personName: document.getElementById('personName').value,
+        date: document.getElementById('transactionDate').value,
+        amount: parseFloat(document.getElementById('transactionAmount').value),
+        recoveryDate: document.getElementById('recoveryDate').value,
+        status: document.getElementById('transactionStatus').value
+    };
+
+    if (transaction.type === 'given') {
+        moneyGiven.push(transaction);
+    } else {
+        moneyTaken.push(transaction);
     }
-}
 
-// Function to save money transactions to localStorage
-function saveMoneyTransactions() {
-    localStorage.setItem('moneyGiven', JSON.stringify(moneyGiven));
-    localStorage.setItem('moneyTaken', JSON.stringify(moneyTaken));
-}
+    updateTransactionTables();
+    updateTransactionSummary();
+    this.reset();
+});
 
-// Function to display money given transactions
-function displayMoneyGiven() {
-    const tbody = document.getElementById('moneyGivenBody');
+// Update Functions
+function updateTable() {
+    const tbody = document.getElementById('recordsTable');
     tbody.innerHTML = '';
     
+    let totalIncome = 0;
+    let totalRent = 0;
+    let totalOtherExpenses = 0;
+    let totalRoomExpenses = 0;
+    let totalSIP = 0;
+    let totalNetSaving = 0;
+
+    records.forEach((record, index) => {
+        const netSaving = record.monthlyIncome - record.rent - record.otherExpenses - record.roomExpenses - record.sipAmount;
+
+        totalIncome += record.monthlyIncome;
+        totalRent += record.rent;
+        totalOtherExpenses += record.otherExpenses;
+        totalRoomExpenses += record.roomExpenses;
+        totalSIP += record.sipAmount;
+        totalNetSaving += netSaving;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${record.date}</td>
+            <td>₹${record.monthlyIncome.toFixed(2)}</td>
+            <td>₹${record.rent.toFixed(2)}</td>
+            <td>₹${record.otherExpenses.toFixed(2)}</td>
+            <td>₹${record.roomExpenses.toFixed(2)}</td>
+            <td>₹${record.sipAmount.toFixed(2)}</td>
+            <td>₹${netSaving.toFixed(2)}</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteRecord(${index})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    document.getElementById('totalIncomeTable').textContent = `₹${totalIncome.toFixed(2)}`;
+    document.getElementById('totalRentTable').textContent = `₹${totalRent.toFixed(2)}`;
+    document.getElementById('totalOtherExpensesTable').textContent = `₹${totalOtherExpenses.toFixed(2)}`;
+    document.getElementById('totalRoomExpensesTable').textContent = `₹${totalRoomExpenses.toFixed(2)}`;
+    document.getElementById('totalSIPTable').textContent = `₹${totalSIP.toFixed(2)}`;
+    document.getElementById('totalNetSavingTable').textContent = `₹${totalNetSaving.toFixed(2)}`;
+}
+
+function updateExpenseTables() {
+    const delayedTbody = document.getElementById('delayedExpensesTable');
+    const roomTbody = document.getElementById('roomExpensesTable');
+    
+    delayedTbody.innerHTML = '';
+    roomTbody.innerHTML = '';
+
+    let totalDelayed = 0;
+    let totalRoom = 0;
+
+    delayedExpenses.forEach((expense, index) => {
+        totalDelayed += expense.amount;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${expense.date}</td>
+            <td>₹${expense.amount.toFixed(2)}</td>
+            <td>₹${totalDelayed.toFixed(2)}</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteDelayedExpense(${index})">Delete</button>
+            </td>
+        `;
+        delayedTbody.appendChild(row);
+    });
+
+    roomExpenses.forEach((expense, index) => {
+        totalRoom += expense.amount;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${expense.date}</td>
+            <td>₹${expense.amount.toFixed(2)}</td>
+            <td>₹${totalRoom.toFixed(2)}</td>
+            <td>
+                <button class="btn btn-danger btn-sm" onclick="deleteRoomExpense(${index})">Delete</button>
+            </td>
+        `;
+        roomTbody.appendChild(row);
+    });
+}
+
+function updateExpenseSummary() {
+    let totalDelayed = delayedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    let totalRoom = roomExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    let totalToPay = totalDelayed + totalRoom;
+
+    document.getElementById('totalDelayedExpenses').textContent = totalDelayed.toFixed(2);
+    document.getElementById('totalRoomExpensesSummary').textContent = totalRoom.toFixed(2);
+    document.getElementById('totalAmountToPay').textContent = totalToPay.toFixed(2);
+}
+
+function updateTransactionTables() {
+    const givenTbody = document.getElementById('moneyGivenTable');
+    const takenTbody = document.getElementById('moneyTakenTable');
+    
+    givenTbody.innerHTML = '';
+    takenTbody.innerHTML = '';
+
     moneyGiven.forEach((transaction, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -495,180 +177,496 @@ function displayMoneyGiven() {
             <td>${transaction.personName}</td>
             <td>₹${transaction.amount.toFixed(2)}</td>
             <td>${transaction.recoveryDate}</td>
-            <td>${transaction.status}</td>
+            <td class="status-${transaction.status}">${transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}</td>
             <td>
-                <button onclick="Recovered(${index})" ${transaction.status === 'Recovered' ? 'disabled' : ''}> Recovered</button>
-                <button onclick="deleteMoneyGiven(${index})">Delete</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMoneyGiven(${index})">Delete</button>
+                <button class="btn btn-info btn-sm" onclick="updateStatus(${index}, 'given')">Update Status</button>
             </td>
         `;
-        tbody.appendChild(row);
+        givenTbody.appendChild(row);
     });
-}
 
-// Function to display money taken transactions
-function displayMoneyTaken() {
-    const tbody = document.getElementById('moneyTakenBody');
-    tbody.innerHTML = '';
-    
     moneyTaken.forEach((transaction, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${transaction.date}</td>
             <td>${transaction.personName}</td>
             <td>₹${transaction.amount.toFixed(2)}</td>
-            <td>${transaction.returnDate}</td>
-            <td>${transaction.status}</td>
+            <td>${transaction.recoveryDate}</td>
+            <td class="status-${transaction.status}">${transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}</td>
             <td>
-                <button onclick="Returned(${index})" ${transaction.status === 'Returned' ? 'disabled' : ''}>Returned</button>
-                <button onclick="deleteMoneyTaken(${index})">Delete</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteMoneyTaken(${index})">Delete</button>
+                <button class="btn btn-info btn-sm" onclick="updateStatus(${index}, 'taken')">Update Status</button>
             </td>
         `;
-        tbody.appendChild(row);
+        takenTbody.appendChild(row);
     });
 }
 
-// Function to update money summary
-function updateMoneySummary() {
-    const totalToReceive = moneyGiven
-        .filter(t => t.status === 'Pending')
-        .reduce((sum, t) => sum + t.amount, 0);
-    
-    const totalToPay = moneyTaken
-        .filter(t => t.status === 'Pending')
-        .reduce((sum, t) => sum + t.amount, 0);
-    
-    document.getElementById('totalToReceive').textContent = `₹${totalToReceive.toFixed(2)}`;
-    document.getElementById('totalToPay').textContent = `₹${totalToPay.toFixed(2)}`;
+function updateTransactionSummary() {
+    let totalToReceive = moneyGiven.reduce((sum, transaction) => 
+        transaction.status === 'pending' ? sum + transaction.amount : sum, 0);
+    let totalToPay = moneyTaken.reduce((sum, transaction) => 
+        transaction.status === 'pending' ? sum + transaction.amount : sum, 0);
+
+    document.getElementById('totalToReceive').textContent = totalToReceive.toFixed(2);
+    document.getElementById('totalToPay').textContent = totalToPay.toFixed(2);
 }
 
-// Function to add new money transaction
-document.getElementById('moneyTransactionForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    
-    const transactionType = document.getElementById('transactionType').value;
-    const personName = document.getElementById('personName').value;
-    const date = document.getElementById('transactionDate').value;
-    const amount = parseFloat(document.getElementById('transactionAmount').value);
-    const recoveryDate = document.getElementById('recoveryDate').value;
-    
-    const transaction = {
-        personName,
-        date,
-        amount,
-        status: 'Pending'
-    };
-    
-    if (transactionType === 'given') {
-        transaction.recoveryDate = recoveryDate;
-        moneyGiven.push(transaction);
-        displayMoneyGiven();
-    } else {
-        transaction.returnDate = recoveryDate;
-        moneyTaken.push(transaction);
-        displayMoneyTaken();
-    }
-    
-    saveMoneyTransactions();
-    updateMoneySummary();
-    e.target.reset();
-});
+function updateSummary() {
+    let totalIncome = 0;
+    let totalExpenses = 0;
+    let totalSavings = 0;
 
-// Function to mark money given as recovered
-function Recovered(index) {
-    moneyGiven[index].status = 'Recovered';
-    saveMoneyTransactions();
-    displayMoneyGiven();
-    updateMoneySummary();
+    records.forEach(record => {
+        totalIncome += record.monthlyIncome;
+        totalExpenses += record.rent + record.otherExpenses + record.roomExpenses + record.sipAmount;
+        totalSavings += record.monthlyIncome - (record.rent + record.otherExpenses + record.roomExpenses + record.sipAmount);
+    });
+
+    document.getElementById('totalIncome').textContent = totalIncome.toFixed(2);
+    document.getElementById('totalExpenses').textContent = totalExpenses.toFixed(2);
+    document.getElementById('totalSavings').textContent = totalSavings.toFixed(2);
+    document.getElementById('savingsGoal').textContent = savingsGoal.toFixed(2);
+
+    const progress = savingsGoal > 0 ? (totalSavings / savingsGoal) * 100 : 0;
+    document.querySelector('.progress-bar').style.width = `${Math.min(progress, 100)}%`;
 }
 
-// Function to mark money taken as returned
-function Returned(index) {
-    moneyTaken[index].status = 'Returned';
-    saveMoneyTransactions();
-    displayMoneyTaken();
-    updateMoneySummary();
+// Delete Functions
+function deleteRecord(index) {
+    records.splice(index, 1);
+    updateTable();
+    updateSummary();
 }
 
-// Function to delete money given transaction
+function deleteDelayedExpense(index) {
+    delayedExpenses.splice(index, 1);
+    updateExpenseTables();
+    updateExpenseSummary();
+}
+
+function deleteRoomExpense(index) {
+    roomExpenses.splice(index, 1);
+    updateExpenseTables();
+    updateExpenseSummary();
+}
+
 function deleteMoneyGiven(index) {
     moneyGiven.splice(index, 1);
-    saveMoneyTransactions();
-    displayMoneyGiven();
-    updateMoneySummary();
+    updateTransactionTables();
+    updateTransactionSummary();
 }
 
-// Function to delete money taken transaction
 function deleteMoneyTaken(index) {
     moneyTaken.splice(index, 1);
-    saveMoneyTransactions();
-    displayMoneyTaken();
-    updateMoneySummary();
+    updateTransactionTables();
+    updateTransactionSummary();
 }
 
-// Function to download money transactions PDF
-function downloadMoneyTransactionsPDF() {
+// Other Functions
+function setSavingsGoal() {
+    savingsGoal = parseFloat(document.getElementById('savingsGoalInput').value) || 0;
+    updateSummary();
+}
+
+function updateStatus(index, type) {
+    const transactions = type === 'given' ? moneyGiven : moneyTaken;
+    const currentStatus = transactions[index].status;
+    transactions[index].status = currentStatus === 'pending' ? 'completed' : 'pending';
+    updateTransactionTables();
+    updateTransactionSummary();
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('isLoggedIn');
+    window.location.href = 'login.html';
+}
+
+function exportToExcel() {
+    // Create a new workbook
+    const wb = XLSX.utils.book_new();
+    
+    // Convert records to worksheet
+    const ws_data = [
+        ['Date', 'Monthly Income', 'Rent', 'Other Expenses', 'Room Expenses', 'SIP Amount', 'Net Saving']
+    ];
+    
+    records.forEach(record => {
+        const netSaving = record.monthlyIncome - record.rent - record.otherExpenses - record.roomExpenses - record.sipAmount;
+        ws_data.push([
+            record.date,
+            record.monthlyIncome,
+            record.rent,
+            record.otherExpenses,
+            record.roomExpenses,
+            record.sipAmount,
+            netSaving
+        ]);
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    
+    // Add the worksheet to the workbook
+    XLSX.utils.book_append_sheet(wb, ws, "Financial Records");
+    
+    // Generate Excel file
+    XLSX.writeFile(wb, "financial_records.xlsx");
+}
+
+function exportIncomeExpensesToPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
     // Add title
     doc.setFontSize(16);
-    doc.text('Money Transactions Report', 14, 15);
+    doc.text("Income & Expenses Report", 14, 15);
     
-    // Add money given table
-    doc.setFontSize(14);
-    doc.text('Money Given', 14, 30);
+    // Add table
+    const tableData = [
+        ['Date', 'Monthly Income', 'Rent', 'Other Expenses', 'Room Expenses', 'SIP Amount', 'Net Saving']
+    ];
     
-    const moneyGivenData = moneyGiven.map(t => [
-        t.date,
-        t.personName,
-        `₹${t.amount.toFixed(2)}`,
-        t.recoveryDate,
-        t.status
-    ]);
-    
-    doc.autoTable({
-        head: [['Date', 'Person Name', 'Amount', 'Recovery Date', 'Status']],
-        body: moneyGivenData,
-        startY: 35
+    records.forEach(record => {
+        const netSaving = record.monthlyIncome - record.rent - record.otherExpenses - record.roomExpenses - record.sipAmount;
+        tableData.push([
+            record.date,
+            `₹${record.monthlyIncome.toFixed(2)}`,
+            `₹${record.rent.toFixed(2)}`,
+            `₹${record.otherExpenses.toFixed(2)}`,
+            `₹${record.roomExpenses.toFixed(2)}`,
+            `₹${record.sipAmount.toFixed(2)}`,
+            `₹${netSaving.toFixed(2)}`
+        ]);
     });
     
-    // Add money taken table
-    const moneyTakenY = doc.lastAutoTable.finalY + 15;
-    doc.text('Money Taken', 14, moneyTakenY);
-    
-    const moneyTakenData = moneyTaken.map(t => [
-        t.date,
-        t.personName,
-        `₹${t.amount.toFixed(2)}`,
-        t.returnDate,
-        t.status
-    ]);
-    
     doc.autoTable({
-        head: [['Date', 'Person Name', 'Amount', 'Return Date', 'Status']],
-        body: moneyTakenData,
-        startY: moneyTakenY + 5
+        head: [tableData[0]],
+        body: tableData.slice(1),
+        startY: 25,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
     });
     
-    // Add summary
-    const summaryY = doc.lastAutoTable.finalY + 15;
-    doc.text('Summary', 14, summaryY);
+    // Save the PDF
+    doc.save("income_expenses_report.pdf");
+}
+
+function exportMonthlyExpensesToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
     
-    const totalToReceive = moneyGiven
-        .filter(t => t.status === 'Pending')
-        .reduce((sum, t) => sum + t.amount, 0);
+    // Add title
+    doc.setFontSize(16);
+    doc.text("Monthly Expenses Report", 14, 15);
     
-    const totalToPay = moneyTaken
-        .filter(t => t.status === 'Pending')
-        .reduce((sum, t) => sum + t.amount, 0);
+    // Add Delayed Expenses table
+    doc.setFontSize(12);
+    doc.text("Delayed Expenses", 14, 30);
     
-    doc.autoTable({
-        body: [
-            ['Total Amount to Receive', `₹${totalToReceive.toFixed(2)}`],
-            ['Total Amount to Pay', `₹${totalToPay.toFixed(2)}`]
-        ],
-        startY: summaryY + 5
+    const delayedTableData = [
+        ['Date', 'Amount', 'Total']
+    ];
+    
+    let totalDelayed = 0;
+    delayedExpenses.forEach(expense => {
+        totalDelayed += expense.amount;
+        delayedTableData.push([
+            expense.date,
+            `₹${expense.amount.toFixed(2)}`,
+            `₹${totalDelayed.toFixed(2)}`
+        ]);
     });
     
-    doc.save('money_transactions_report.pdf');
+    doc.autoTable({
+        head: [delayedTableData[0]],
+        body: delayedTableData.slice(1),
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Add Room Expenses table
+    doc.setFontSize(12);
+    doc.text("Room Expenses", 14, doc.autoTable.previous.finalY + 10);
+    
+    const roomTableData = [
+        ['Date', 'Amount', 'Total']
+    ];
+    
+    let totalRoom = 0;
+    roomExpenses.forEach(expense => {
+        totalRoom += expense.amount;
+        roomTableData.push([
+            expense.date,
+            `₹${expense.amount.toFixed(2)}`,
+            `₹${totalRoom.toFixed(2)}`
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [roomTableData[0]],
+        body: roomTableData.slice(1),
+        startY: doc.autoTable.previous.finalY + 15,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Save the PDF
+    doc.save("monthly_expenses_report.pdf");
+}
+
+function exportMoneyTransactionsToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(16);
+    doc.text("Money Transactions Report", 14, 15);
+    
+    // Add Money Given table
+    doc.setFontSize(12);
+    doc.text("Money Given", 14, 30);
+    
+    const givenTableData = [
+        ['Date', 'Person Name', 'Amount', 'Recovery Date', 'Status']
+    ];
+    
+    moneyGiven.forEach(transaction => {
+        givenTableData.push([
+            transaction.date,
+            transaction.personName,
+            `₹${transaction.amount.toFixed(2)}`,
+            transaction.recoveryDate,
+            transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [givenTableData[0]],
+        body: givenTableData.slice(1),
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Add Money Taken table
+    doc.setFontSize(12);
+    doc.text("Money Taken", 14, doc.autoTable.previous.finalY + 10);
+    
+    const takenTableData = [
+        ['Date', 'Person Name', 'Amount', 'Return Date', 'Status']
+    ];
+    
+    moneyTaken.forEach(transaction => {
+        takenTableData.push([
+            transaction.date,
+            transaction.personName,
+            `₹${transaction.amount.toFixed(2)}`,
+            transaction.recoveryDate,
+            transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [takenTableData[0]],
+        body: takenTableData.slice(1),
+        startY: doc.autoTable.previous.finalY + 15,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Save the PDF
+    doc.save("money_transactions_report.pdf");
+}
+
+function exportAllToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add main title
+    doc.setFontSize(20);
+    doc.text("Financial Tracker Report", 14, 15);
+    
+    // Income & Expenses Section
+    doc.setFontSize(16);
+    doc.text("1. Income & Expenses", 14, 30);
+    
+    const incomeTableData = [
+        ['Date', 'Monthly Income', 'Rent', 'Other Expenses', 'Room Expenses', 'SIP Amount', 'Net Saving']
+    ];
+    
+    records.forEach(record => {
+        const netSaving = record.monthlyIncome - record.rent - record.otherExpenses - record.roomExpenses - record.sipAmount;
+        incomeTableData.push([
+            record.date,
+            `₹${record.monthlyIncome.toFixed(2)}`,
+            `₹${record.rent.toFixed(2)}`,
+            `₹${record.otherExpenses.toFixed(2)}`,
+            `₹${record.roomExpenses.toFixed(2)}`,
+            `₹${record.sipAmount.toFixed(2)}`,
+            `₹${netSaving.toFixed(2)}`
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [incomeTableData[0]],
+        body: incomeTableData.slice(1),
+        startY: 35,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Monthly Expenses Section
+    doc.setFontSize(16);
+    doc.text("2. Monthly Expenses", 14, doc.autoTable.previous.finalY + 15);
+    
+    // Delayed Expenses
+    doc.setFontSize(12);
+    doc.text("Delayed Expenses", 14, doc.autoTable.previous.finalY + 25);
+    
+    const delayedTableData = [
+        ['Date', 'Amount', 'Total']
+    ];
+    
+    let totalDelayed = 0;
+    delayedExpenses.forEach(expense => {
+        totalDelayed += expense.amount;
+        delayedTableData.push([
+            expense.date,
+            `₹${expense.amount.toFixed(2)}`,
+            `₹${totalDelayed.toFixed(2)}`
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [delayedTableData[0]],
+        body: delayedTableData.slice(1),
+        startY: doc.autoTable.previous.finalY + 30,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Room Expenses
+    doc.setFontSize(12);
+    doc.text("Room Expenses", 14, doc.autoTable.previous.finalY + 10);
+    
+    const roomTableData = [
+        ['Date', 'Amount', 'Total']
+    ];
+    
+    let totalRoom = 0;
+    roomExpenses.forEach(expense => {
+        totalRoom += expense.amount;
+        roomTableData.push([
+            expense.date,
+            `₹${expense.amount.toFixed(2)}`,
+            `₹${totalRoom.toFixed(2)}`
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [roomTableData[0]],
+        body: roomTableData.slice(1),
+        startY: doc.autoTable.previous.finalY + 15,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Money Transactions Section
+    doc.setFontSize(16);
+    doc.text("3. Money Transactions", 14, doc.autoTable.previous.finalY + 15);
+    
+    // Money Given
+    doc.setFontSize(12);
+    doc.text("Money Given", 14, doc.autoTable.previous.finalY + 25);
+    
+    const givenTableData = [
+        ['Date', 'Person Name', 'Amount', 'Recovery Date', 'Status']
+    ];
+    
+    moneyGiven.forEach(transaction => {
+        givenTableData.push([
+            transaction.date,
+            transaction.personName,
+            `₹${transaction.amount.toFixed(2)}`,
+            transaction.recoveryDate,
+            transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [givenTableData[0]],
+        body: givenTableData.slice(1),
+        startY: doc.autoTable.previous.finalY + 30,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Money Taken
+    doc.setFontSize(12);
+    doc.text("Money Taken", 14, doc.autoTable.previous.finalY + 10);
+    
+    const takenTableData = [
+        ['Date', 'Person Name', 'Amount', 'Return Date', 'Status']
+    ];
+    
+    moneyTaken.forEach(transaction => {
+        takenTableData.push([
+            transaction.date,
+            transaction.personName,
+            `₹${transaction.amount.toFixed(2)}`,
+            transaction.recoveryDate,
+            transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)
+        ]);
+    });
+    
+    doc.autoTable({
+        head: [takenTableData[0]],
+        body: takenTableData.slice(1),
+        startY: doc.autoTable.previous.finalY + 15,
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] },
+        styles: { fontSize: 8 }
+    });
+    
+    // Save the PDF
+    doc.save("financial_tracker_report.pdf");
+}
+
+function downloadFile(filename) {
+    // Create a link element
+    const link = document.createElement('a');
+    link.href = filename;
+    link.download = filename;
+    
+    // Append to body, click, and remove
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function editSavingsGoal() {
+    const currentGoal = savingsGoal;
+    const newGoal = prompt("Enter new savings goal (₹):", currentGoal);
+    
+    if (newGoal !== null) {
+        const parsedGoal = parseFloat(newGoal);
+        if (!isNaN(parsedGoal) && parsedGoal >= 0) {
+            savingsGoal = parsedGoal;
+            updateSummary();
+        } else {
+            alert("Please enter a valid number greater than or equal to 0");
+        }
+    }
 } 
