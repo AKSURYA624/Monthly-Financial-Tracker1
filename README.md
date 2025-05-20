@@ -4,13 +4,13 @@ A web application for tracking personal finances, expenses, and transactions.
 
 ## Backend Setup
 
-The backend is built with Python Flask and uses MongoDB as the database.
+The backend is built with Python Flask and uses MySQL as the database.
 
 ### Prerequisites
 
 - Python 3.7 or higher
 - pip (Python package manager)
-- MongoDB (v4.4 or higher)
+- MySQL (v5.7 or higher)
 
 ### Installation
 
@@ -30,17 +30,17 @@ Create a `.env` file in the root directory with the following content:
 ```
 FLASK_APP=app.py
 FLASK_ENV=development
-MONGODB_URI=mongodb://localhost:27017/financial-tracker
+DATABASE_URL=mysql://root:password@localhost/financial_tracker
 JWT_SECRET_KEY=your-secret-key-here
 ```
 
-4. Start MongoDB:
+4. Start MySQL:
 ```bash
 # On Windows
-mongod
+mysqld
 
 # On macOS/Linux
-sudo service mongod start
+sudo service mysqld start
 ```
 
 ### Running the Application

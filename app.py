@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_pymongo import PyMongo
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from flask_restful import Api, Resource
@@ -9,8 +9,6 @@ from datetime import datetime
 import bcrypt
 import os
 from dotenv import load_dotenv
-from bson import ObjectId
-from cerberus import Validator as CerberusValidator
 from werkzeug.exceptions import HTTPException
 import logging
 
@@ -26,13 +24,50 @@ CORS(app)
 api = Api(app)
 
 # Configuration
-app.config['MONGO_URI'] = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/financial-tracker')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql://root:password@localhost/financial_tracker')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'your-secret-key')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # 1 hour
 
 # Initialize extensions
-mongo = PyMongo(app)
+db = SQLAlchemy(app)
 jwt = JWTManager(app)
+
+# Database Models
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+    financial_records = db.relationship('FinancialRecord', backref='user', lazy=True)
+    expenses = db.relationship('Expense', backref='user', lazy=True)
+    transactions = db.relationship('Transaction', backref='user', lazy=True)
+
+class FinancialRecord(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    monthly_income = db.Column(db.Float, nullable=False)
+    rent = db.Column(db.Float, nullable=False)
+    other_expenses = db.Column(db.Float, nullable=False)
+    room_expenses = db.Column(db.Float, nullable=False)
+    sip_amount = db.Column(db.Float, nullable=False)
+
+class Expense(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    type = db.Column(db.String(20), nullable=False)
+
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    type = db.Column(db.String(20), nullable=False)
+    person_name = db.Column(db.String(100), nullable=False)
+    date = db.Column(db.Date, nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    recovery_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), nullable=False)
 
 # Error Handlers
 @app.errorhandler(HTTPException)
@@ -78,13 +113,6 @@ class TransactionSchema(Schema):
     recovery_date = fields.Date(required=True)
     status = fields.Str(required=True, validate=validate.OneOf(['pending', 'completed']))
 
-# MongoDB Indexes
-def create_indexes():
-    mongo.db.users.create_index('username', unique=True)
-    mongo.db.financial_records.create_index([('user_id', 1), ('date', -1)])
-    mongo.db.expenses.create_index([('user_id', 1), ('date', -1)])
-    mongo.db.transactions.create_index([('user_id', 1), ('date', -1)])
-
 # API Resources
 class UserRegistration(Resource):
     def post(self):
@@ -96,19 +124,18 @@ class UserRegistration(Resource):
             if errors:
                 return {'error': 'Validation Error', 'details': errors}, 400
 
-            if mongo.db.users.find_one({'username': data['username']}):
+            if User.query.filter_by(username=data['username']).first():
                 return {'error': 'Username already exists'}, 400
 
             hashed_password = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt())
-            user = {
-                'username': data['username'],
-                'password': hashed_password.decode('utf-8')
-            }
-            mongo.db.users.insert_one(user)
+            user = User(username=data['username'], password=hashed_password.decode('utf-8'))
+            db.session.add(user)
+            db.session.commit()
 
             return {'message': 'User created successfully'}, 201
         except Exception as e:
             logger.error(f"Registration error: {str(e)}")
+            db.session.rollback()
             return {'error': 'Internal Server Error'}, 500
 
 class UserLogin(Resource):
@@ -121,11 +148,11 @@ class UserLogin(Resource):
             if errors:
                 return {'error': 'Validation Error', 'details': errors}, 400
 
-            user = mongo.db.users.find_one({'username': data['username']})
-            if not user or not bcrypt.checkpw(data['password'].encode('utf-8'), user['password'].encode('utf-8')):
+            user = User.query.filter_by(username=data['username']).first()
+            if not user or not bcrypt.checkpw(data['password'].encode('utf-8'), user.password.encode('utf-8')):
                 return {'error': 'Invalid username or password'}, 401
 
-            access_token = create_access_token(identity=str(user['_id']))
+            access_token = create_access_token(identity=user.id)
             return {'token': access_token}, 200
         except Exception as e:
             logger.error(f"Login error: {str(e)}")
@@ -136,11 +163,16 @@ class FinancialRecordResource(Resource):
     def get(self):
         try:
             user_id = get_jwt_identity()
-            records = list(mongo.db.financial_records.find({'user_id': user_id}))
-            for record in records:
-                record['_id'] = str(record['_id'])
-                record['date'] = record['date'].strftime('%Y-%m-%d')
-            return records, 200
+            records = FinancialRecord.query.filter_by(user_id=user_id).all()
+            return [{
+                'id': record.id,
+                'date': record.date.strftime('%Y-%m-%d'),
+                'monthly_income': record.monthly_income,
+                'rent': record.rent,
+                'other_expenses': record.other_expenses,
+                'room_expenses': record.room_expenses,
+                'sip_amount': record.sip_amount
+            } for record in records], 200
         except Exception as e:
             logger.error(f"Get records error: {str(e)}")
             return {'error': 'Internal Server Error'}, 500
@@ -156,19 +188,21 @@ class FinancialRecordResource(Resource):
             if errors:
                 return {'error': 'Validation Error', 'details': errors}, 400
 
-            record = {
-                'user_id': user_id,
-                'date': datetime.strptime(data['date'], '%Y-%m-%d'),
-                'monthly_income': data['monthlyIncome'],
-                'rent': data['rent'],
-                'other_expenses': data['otherExpenses'],
-                'room_expenses': data['roomExpenses'],
-                'sip_amount': data['sipAmount']
-            }
-            mongo.db.financial_records.insert_one(record)
+            record = FinancialRecord(
+                user_id=user_id,
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+                monthly_income=data['monthlyIncome'],
+                rent=data['rent'],
+                other_expenses=data['otherExpenses'],
+                room_expenses=data['roomExpenses'],
+                sip_amount=data['sipAmount']
+            )
+            db.session.add(record)
+            db.session.commit()
             return {'message': 'Record created successfully'}, 201
         except Exception as e:
             logger.error(f"Create record error: {str(e)}")
+            db.session.rollback()
             return {'error': 'Internal Server Error'}, 500
 
 class ExpenseResource(Resource):
@@ -176,11 +210,13 @@ class ExpenseResource(Resource):
     def get(self):
         try:
             user_id = get_jwt_identity()
-            expenses = list(mongo.db.expenses.find({'user_id': user_id}))
-            for expense in expenses:
-                expense['_id'] = str(expense['_id'])
-                expense['date'] = expense['date'].strftime('%Y-%m-%d')
-            return expenses, 200
+            expenses = Expense.query.filter_by(user_id=user_id).all()
+            return [{
+                'id': expense.id,
+                'date': expense.date.strftime('%Y-%m-%d'),
+                'amount': expense.amount,
+                'type': expense.type
+            } for expense in expenses], 200
         except Exception as e:
             logger.error(f"Get expenses error: {str(e)}")
             return {'error': 'Internal Server Error'}, 500
@@ -196,16 +232,18 @@ class ExpenseResource(Resource):
             if errors:
                 return {'error': 'Validation Error', 'details': errors}, 400
 
-            expense = {
-                'user_id': user_id,
-                'date': datetime.strptime(data['date'], '%Y-%m-%d'),
-                'amount': data['amount'],
-                'type': data['type']
-            }
-            mongo.db.expenses.insert_one(expense)
+            expense = Expense(
+                user_id=user_id,
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+                amount=data['amount'],
+                type=data['type']
+            )
+            db.session.add(expense)
+            db.session.commit()
             return {'message': 'Expense created successfully'}, 201
         except Exception as e:
             logger.error(f"Create expense error: {str(e)}")
+            db.session.rollback()
             return {'error': 'Internal Server Error'}, 500
 
 class TransactionResource(Resource):
@@ -213,12 +251,16 @@ class TransactionResource(Resource):
     def get(self):
         try:
             user_id = get_jwt_identity()
-            transactions = list(mongo.db.transactions.find({'user_id': user_id}))
-            for transaction in transactions:
-                transaction['_id'] = str(transaction['_id'])
-                transaction['date'] = transaction['date'].strftime('%Y-%m-%d')
-                transaction['recovery_date'] = transaction['recovery_date'].strftime('%Y-%m-%d')
-            return transactions, 200
+            transactions = Transaction.query.filter_by(user_id=user_id).all()
+            return [{
+                'id': transaction.id,
+                'type': transaction.type,
+                'person_name': transaction.person_name,
+                'date': transaction.date.strftime('%Y-%m-%d'),
+                'amount': transaction.amount,
+                'recovery_date': transaction.recovery_date.strftime('%Y-%m-%d'),
+                'status': transaction.status
+            } for transaction in transactions], 200
         except Exception as e:
             logger.error(f"Get transactions error: {str(e)}")
             return {'error': 'Internal Server Error'}, 500
@@ -234,19 +276,21 @@ class TransactionResource(Resource):
             if errors:
                 return {'error': 'Validation Error', 'details': errors}, 400
 
-            transaction = {
-                'user_id': user_id,
-                'type': data['type'],
-                'person_name': data['personName'],
-                'date': datetime.strptime(data['date'], '%Y-%m-%d'),
-                'amount': data['amount'],
-                'recovery_date': datetime.strptime(data['recoveryDate'], '%Y-%m-%d'),
-                'status': data['status']
-            }
-            mongo.db.transactions.insert_one(transaction)
+            transaction = Transaction(
+                user_id=user_id,
+                type=data['type'],
+                person_name=data['personName'],
+                date=datetime.strptime(data['date'], '%Y-%m-%d').date(),
+                amount=data['amount'],
+                recovery_date=datetime.strptime(data['recoveryDate'], '%Y-%m-%d').date(),
+                status=data['status']
+            )
+            db.session.add(transaction)
+            db.session.commit()
             return {'message': 'Transaction created successfully'}, 201
         except Exception as e:
             logger.error(f"Create transaction error: {str(e)}")
+            db.session.rollback()
             return {'error': 'Internal Server Error'}, 500
 
 # Register API resources
@@ -256,9 +300,9 @@ api.add_resource(FinancialRecordResource, '/api/records')
 api.add_resource(ExpenseResource, '/api/expenses')
 api.add_resource(TransactionResource, '/api/transactions')
 
-# Create indexes
+# Create database tables
 with app.app_context():
-    create_indexes()
+    db.create_all()
 
 if __name__ == '__main__':
     app.run(debug=True) 
