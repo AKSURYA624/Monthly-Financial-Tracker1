@@ -1,95 +1,97 @@
-# Financial Tracker Application
+# balanced-match
 
-A web application for tracking personal finances, expenses, and transactions.
+Match balanced string pairs, like `{` and `}` or `<b>` and `</b>`. Supports regular expressions as well!
 
-## Backend Setup
+[![build status](https://secure.travis-ci.org/juliangruber/balanced-match.svg)](http://travis-ci.org/juliangruber/balanced-match)
+[![downloads](https://img.shields.io/npm/dm/balanced-match.svg)](https://www.npmjs.org/package/balanced-match)
 
-The backend is built with Python Flask and uses MySQL as the database.
+[![testling badge](https://ci.testling.com/juliangruber/balanced-match.png)](https://ci.testling.com/juliangruber/balanced-match)
 
-### Prerequisites
+## Example
 
-- Python 3.7 or higher
-- pip (Python package manager)
-- MySQL (v5.7 or higher)
+Get the first matching pair of braces:
 
-### Installation
+```js
+var balanced = require('balanced-match');
 
-1. Create a virtual environment (recommended):
+console.log(balanced('{', '}', 'pre{in{nested}}post'));
+console.log(balanced('{', '}', 'pre{first}between{second}post'));
+console.log(balanced(/\s+\{\s+/, /\s+\}\s+/, 'pre  {   in{nest}   }  post'));
+```
+
+The matches are:
+
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+$ node example.js
+{ start: 3, end: 14, pre: 'pre', body: 'in{nested}', post: 'post' }
+{ start: 3,
+  end: 9,
+  pre: 'pre',
+  body: 'first',
+  post: 'between{second}post' }
+{ start: 3, end: 17, pre: 'pre', body: 'in{nest}', post: 'post' }
 ```
 
-2. Install dependencies:
+## API
+
+### var m = balanced(a, b, str)
+
+For the first non-nested matching pair of `a` and `b` in `str`, return an
+object with those keys:
+
+* **start** the index of the first match of `a`
+* **end** the index of the matching `b`
+* **pre** the preamble, `a` and `b` not included
+* **body** the match, `a` and `b` not included
+* **post** the postscript, `a` and `b` not included
+
+If there's no match, `undefined` will be returned.
+
+If the `str` contains more `a` than `b` / there are unmatched pairs, the first match that was closed will be used. For example, `{{a}` will match `['{', 'a', '']` and `{a}}` will match `['', 'a', '}']`.
+
+### var r = balanced.range(a, b, str)
+
+For the first non-nested matching pair of `a` and `b` in `str`, return an
+array with indexes: `[ <a index>, <b index> ]`.
+
+If there's no match, `undefined` will be returned.
+
+If the `str` contains more `a` than `b` / there are unmatched pairs, the first match that was closed will be used. For example, `{{a}` will match `[ 1, 3 ]` and `{a}}` will match `[0, 2]`.
+
+## Installation
+
+With [npm](https://npmjs.org) do:
+
 ```bash
-pip install -r requirements.txt
+npm install balanced-match
 ```
 
-3. Set up environment variables:
-Create a `.env` file in the root directory with the following content:
-```
-FLASK_APP=app.py
-FLASK_ENV=development
-DATABASE_URL=mysql://root:password@localhost/financial_tracker
-JWT_SECRET_KEY=your-secret-key-here
-```
+## Security contact information
 
-4. Start MySQL:
-```bash
-# On Windows
-mysqld
+To report a security vulnerability, please use the
+[Tidelift security contact](https://tidelift.com/security).
+Tidelift will coordinate the fix and disclosure.
 
-# On macOS/Linux
-sudo service mysqld start
-```
+## License
 
-### Running the Application
+(MIT)
 
-Start the Flask development server:
-```bash
-flask run
-```
+Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;
 
-The server will start at `http://localhost:5000`
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-## API Endpoints
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-### Authentication
-- `POST /api/register` - Register a new user
-- `POST /api/login` - Login and get JWT token
-
-### Financial Records
-- `GET /api/records` - Get all financial records
-- `POST /api/records` - Create a new financial record
-
-### Expenses
-- `GET /api/expenses` - Get all expenses
-- `POST /api/expenses` - Create a new expense
-
-### Transactions
-- `GET /api/transactions` - Get all transactions
-- `POST /api/transactions` - Create a new transaction
-
-All endpoints except `/api/register` and `/api/login` require JWT authentication. Include the token in the Authorization header:
-```
-Authorization: Bearer <your-token>
-```
-
-## Frontend
-
-The frontend is built with HTML, CSS, and JavaScript. It communicates with the backend API endpoints.
-
-### Features
-- User authentication
-- Financial record management
-- Expense tracking
-- Transaction management
-- Responsive design
-
-## Security Notes
-
-- Always use HTTPS in production
-- Keep your JWT_SECRET_KEY secure
-- Regularly backup your database
-- Implement proper input validation
-- Use strong passwords 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
